@@ -12,6 +12,7 @@ import {
   ScrollView,
   Animated,
   Alert,
+  ActivityIndicator
 } from "react-native";
 import { onAuthStateChanged } from "firebase/auth";
 import { auth } from "../components/firebase";
@@ -34,18 +35,61 @@ import { utcToZonedTime, format } from "date-fns-tz";
 import { formatDateToTimezone } from "../utils/DateUtils";
 import EditJournalEntryModal from "../screens/EditJournalEntryModal";
 import LoadingFlower from '../components/LoadingFlower';
+import { getJournalEntries } from "../functions/JournalFunctions";
+
+const [allEntries, setAllEntries] = useState([]);
+const [data, setData] = useState([]);
+const [isLoading, setIsLoading] = useState(false);
+const [searchQuery, setSearchQuery] = useState("");
+
+useEffect(() => {
+  setIsLoading(true);
+  getJournalEntries();
+  setIsLoading(false);
+}, []);
+
+const handleSearch = (query) => {
+  setSearchQuery(query);
+}
+
+if(isLoading) {
+  return (
+    <View style={{flex:1, justifyContent:'center', alignItems:'center'}}>
+      <ActivityIndicator size ={'large'} color="#5500dc" />
+    </View>
+  )
+}
 
 const SearchBar = () => (
-  <View style={styles.searchBar}>
+  <SafeAreaView style={styles.searchBar}>
     <TextInput
-      style={styles.searchInput}
+      style={{ // should probably move this for reusability later
+        paddingHorizontal:20,
+        paddingVertical:10,
+        bordeColor:'#ccc',
+        borderWidth:1,
+        borderRadius:8}}
       placeholder="Search Past Entries?"
       placeholderTextColor="#555"
+      clearButtonMode='always'
+      autoCapitalize='none'
+      autoCorrect={false}
+      value={searchQuery}
+      onChangeText={(query) => handleSearch(query)}
     />
+    <FlatList>
+      data={data}
+      keyExtractor={(item) => item.entryTitle}
+      renderItem={({item}) => (
+        <View>
+          <Text>{item.entryTitle} </Text>
+        </View>
+      )}
+    </FlatList>
     <TouchableOpacity>
       <Text style={styles.closeButton}>×</Text>
     </TouchableOpacity>
-  </View>
+  </SafeAreaView>
 );
 
 const getRandomQuote = () => {
